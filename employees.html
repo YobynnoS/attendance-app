@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Management | Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #3498db;
+      --secondary: #2c3e50;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --bg: #f8f9fa;
+      --text: #2f3542;
+      --white: #ffffff;
+      --nav-height: 60px;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text); }
+    
+    /* Professional Top Navbar */
+    .navbar {
+      background: var(--secondary);
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .nav-brand { color: var(--white); font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+    .nav-links { display: flex; height: 100%; gap: 5px; }
+
+    .nav-item {
+      text-decoration: none;
+      color: #a4b0be;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+    .nav-item.active {
+      color: var(--white);
+      border-bottom: 3px solid var(--primary);
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* Main Container */
+    .main-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { margin: 0; font-size: 22px; color: var(--secondary); }
+
+    /* Action Buttons */
+    .btn-register { 
+      background: var(--success); 
+      padding: 10px 20px; 
+      border-radius: 6px; 
+      color: white; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: bold; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px;
+      transition: transform 0.2s;
+    }
+    .btn-register:hover { transform: translateY(-2px); opacity: 0.9; }
+    
+    /* Action Buttons in Table */
+    .btn-edit, .btn-delete { 
+      border: none; border-radius: 8px; cursor: pointer; font-size: 16px; 
+      width: 36px; height: 36px; display: inline-flex; align-items: center; 
+      justify-content: center; transition: all 0.2s; 
+    }
+    .btn-edit { background: #e1f5fe; color: #03a9f4; }
+    .btn-delete { background: #ffebee; color: #f44336; }
+    .btn-edit:hover { background: #03a9f4; color: white; }
+    .btn-delete:hover { background: #f44336; color: white; }
+
+    /* Table Design */
+    .table-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f1f2f6; color: #57606f; font-weight: 600; font-size: 13px; text-transform: uppercase; padding: 15px; }
+    td { padding: 15px; border-bottom: 1px solid #f1f2f6; font-size: 15px; }
+
+    /* UPDATED: Flex container for buttons */
+    .action-col { 
+      width: 120px; 
+    }
+    .action-group {
+      display: flex;
+      justify-content: center;
+      gap: 8px; /* Space between buttons */
+    }
+
+    /* Modal Styling */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+    .modal-content { background: white; padding: 30px; border-radius: 15px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .modal-content h3 { margin-top: 0; color: var(--secondary); }
+    .modal-content input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border 0.3s; }
+    .modal-content input:focus { border-color: var(--primary); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+    @media (max-width: 600px) {
+      .navbar { padding: 0 10px; }
+      .nav-brand { display: none; }
+      .nav-item { padding: 0 12px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand"><i class="fas fa-shield-halved"></i> ADMIN PORTAL</div>
+    <div class="nav-links">
+      <a href="attendance.html" class="nav-item">ATTENDANCE</a>
+      <a href="employees.html" class="nav-item active">EMPLOYEES</a>
+      <a href="projectsites.html" class="nav-item">PROJECT SITES</a>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <div class="header-flex">
+      <h1 class="page-title">Employee Registry</h1>
+      <button class="btn-register" onclick="openModal()">
+        <i class="fas fa-plus"></i> Register New
+      </button>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th> 
+            <th>Full Name</th>
+            <th class="action-col" style="text-align: center;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="employee-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <h3 id="modalTitle">New Employee</h3>
+      <input type="hidden" id="editId">
+      <input type="text" id="newName" placeholder="Enter Full Name">
+      <div class="modal-actions">
+        <button style="background:#eee; border:none; color:#666; padding:10px 15px; border-radius:6px; cursor:pointer;" onclick="closeModal()">Cancel</button>
+        <button style="background:var(--primary); border:none; color:white; padding:10px 15px; border-radius:6px; cursor:pointer;" onclick="saveEmployee()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ugcumdfeioxrtijekvcl.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Z_sTQbKf7EeHB5YHGNH8Fg_y_AQmdti';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const employeeBody = document.getElementById('employee-body');
+    const modalOverlay = document.getElementById('modalOverlay');
+
+    function openModal(id = null, name = '') {
+      document.getElementById('editId').value = id;
+      document.getElementById('newName').value = name;
+      document.getElementById('modalTitle').innerText = id ? "Update Employee" : "Register Employee";
+      modalOverlay.style.display = 'flex';
+    }
+
+    function closeModal() { modalOverlay.style.display = 'none'; }
+
+    async function fetchEmployees() {
+      const { data, error } = await supabase.from('employees').select('id, full_name').order('id', { ascending: true });
+      if (error) return;
+      employeeBody.innerHTML = '';
+      data.forEach(emp => {
+        employeeBody.innerHTML += `
+          <tr>
+            <td><span style="color:#999; font-weight:bold;">${emp.id}</span></td>
+            <td>${emp.full_name}</td>
+            <td class="action-col">
+              <div class="action-group">
+                <button class="btn-edit" title="Edit" onclick="openModal('${emp.id}', '${emp.full_name}')"><i class="fas fa-pen"></i></button>
+                <button class="btn-delete" title="Delete" onclick="deleteEmployee('${emp.id}', '${emp.full_name}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function saveEmployee() {
+      const id = document.getElementById('editId').value;
+      const name = document.getElementById('newName').value.trim();
+      if (!name) return alert("Please enter a name");
+
+      if (id) {
+        await supabase.from('employees').update({ full_name: name }).eq('id', id);
+      } else {
+        await supabase.from('employees').insert([{ full_name: name }]);
+      }
+      closeModal();
+      fetchEmployees();
+    }
+
+    async function deleteEmployee(id, name) {
+      if (confirm(`Remove ${name} from system?`)) {
+        await supabase.from('employees').delete().eq('id', id);
+        fetchEmployees();
+      }
+    }
+
+    fetchEmployees();
+  </script>
+</body>
+</html>
