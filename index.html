@@ -7,7 +7,24 @@
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1063/1063376.png">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1063/1063376.png">
   <style>
-    body { margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #f0f2f5; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { margin: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f2f5; font-family: 'Segoe UI', Arial, sans-serif; }
+    
+    /* Status Indicator Style */
+    .connection-status {
+      margin-bottom: 10px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-connected { color: #2ecc71; }
+    .status-connected .status-dot { background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+    .status-disconnected { color: #e74c3c; }
+    .status-disconnected .status-dot { background-color: #e74c3c; }
+
     .attendance-box { background-color: #ffffff; padding: 40px 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
     
     h3 { color: #2c3e50; margin-bottom: 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
@@ -50,6 +67,11 @@
 </head>
 <body>
 
+  <div id="dbStatus" class="connection-status status-disconnected">
+    <span class="status-dot"></span>
+    <span id="statusText">Disconnected</span>
+  </div>
+
   <div class="attendance-box">
     <h3>Project Site</h3>
     <select id="projectSite">
@@ -89,6 +111,18 @@
     const input = document.getElementById('employeeId');
     const siteSelect = document.getElementById('projectSite');
     const modal = document.getElementById('statusModal');
+    const dbStatus = document.getElementById('dbStatus');
+    const statusText = document.getElementById('statusText');
+
+    function updateStatus(isConnected) {
+        if (isConnected) {
+            dbStatus.className = 'connection-status status-connected';
+            statusText.innerText = 'Connected';
+        } else {
+            dbStatus.className = 'connection-status status-disconnected';
+            statusText.innerText = 'Disconnected';
+        }
+    }
 
     async function loadSites() {
       const { data, error } = await supabase
@@ -98,9 +132,11 @@
 
       if (error) {
         siteSelect.innerHTML = '<option value="">Error loading sites</option>';
+        updateStatus(false);
         return;
       }
 
+      updateStatus(true);
       siteSelect.innerHTML = '<option value="">-- Select Location --</option>';
       data.forEach(site => {
         const option = document.createElement('option');
@@ -126,30 +162,27 @@
       const site = siteSelect.value;
 
       if (!id) return alert("Please enter your Employee ID.");
+      if (type === 'login' && !site) return alert("Please select a Project Site to Login.");
 
-      // Check Login requirement
-      if (type === 'login' && !site) {
-        return alert("Please select a Project Site to Login.");
-      }
-
-      // 1. Verify Employee
+      // Verify Employee
       const { data: employee, error: empError } = await supabase
         .from('employees')
         .select('full_name')
         .eq('id', id)
         .maybeSingle();
 
-      if (empError || !employee) {
+      if (empError) {
+          updateStatus(false);
+          return alert("Connection Error. Please check internet.");
+      }
+
+      if (!employee) {
         alert("Employee ID not found.");
         return;
       }
 
       const now = new Date();
-      const currentTime = now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: true 
-      });
+      const currentTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
       const currentDate = now.toISOString().split('T')[0];
 
       if (type === 'login') {
@@ -165,10 +198,9 @@
         showStatusModal("Welcome!", `Hello, <b>${employee.full_name}</b>!<br>Checked in at ${site}<br>Time: ${currentTime}`, "#2ecc71");
 
       } else {
-        // 2. LOGOUT LOGIC: Find active session for today, ignoring the site dropdown
         const { data: activeLog, error: logError } = await supabase
           .from('attendance_logs')
-          .select('id, project_site') // Get the site from the database record
+          .select('id, project_site')
           .eq('employee_id', id)
           .eq('date', currentDate)
           .is('logout_time', null)
