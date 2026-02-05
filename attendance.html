@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Logs | Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #3498db;
+      --secondary: #2c3e50;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --bg: #f8f9fa;
+      --text: #2f3542;
+      --white: #ffffff;
+      --nav-height: 60px;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text); }
+    
+    .navbar {
+      background: var(--secondary);
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .nav-brand { color: var(--white); font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+    .nav-links { display: flex; height: 100%; gap: 5px; }
+
+    .nav-item {
+      text-decoration: none;
+      color: #a4b0be;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+    .nav-item.active {
+      color: var(--white);
+      border-bottom: 3px solid var(--primary);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .main-container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+    .page-header { margin-bottom: 25px; }
+    .page-title { margin: 0; font-size: 24px; color: var(--secondary); }
+
+    .filter-card { 
+      background: var(--white); 
+      padding: 20px; 
+      border-radius: 12px; 
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+      flex-wrap: wrap;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      border: 1px solid #edf2f7;
+      margin-bottom: 20px;
+    }
+    
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .filter-group label { font-weight: 600; color: #718096; font-size: 12px; text-transform: uppercase; }
+    
+    .search-input-wrapper { position: relative; flex: 1; min-width: 200px; }
+    .search-input-wrapper i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #a0aec0; }
+    
+    input { 
+        padding: 8px 12px; 
+        border: 1px solid #e2e8f0; 
+        border-radius: 6px; 
+        outline: none; 
+        font-family: inherit;
+        color: var(--text);
+        font-size: 14px;
+    }
+    .search-input { width: 100%; padding-left: 35px !important; background: #fdfdfd; }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+    
+    .button-group { display: flex; gap: 8px; }
+    
+    .btn-action { 
+        padding: 10px 16px; 
+        border: none; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        font-weight: 600; 
+        font-size: 13px; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px;
+        transition: all 0.2s; 
+    }
+    .btn-reset { background: #edf2f7; color: #4a5568; }
+    .btn-download { background: var(--primary); color: white; }
+    .btn-delete-filtered { background: #fff5f5; color: var(--danger); border: 1px solid #fed7d7; }
+
+    .btn-reset:hover { background: #e2e8f0; }
+    .btn-download:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-delete-filtered:hover { background: var(--danger); color: white; }
+
+    .table-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th { background: #f8fafc; color: #64748b; font-weight: 600; font-size: 12px; text-transform: uppercase; padding: 15px; border-bottom: 2px solid #edf2f7; text-align: left; }
+    td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    
+    .no-data { text-align: center; padding: 50px !important; color: #94a3b8; font-style: italic; }
+    .status-login { color: var(--success); font-weight: bold; }
+    .status-logout { color: var(--danger); font-weight: bold; }
+    .site-tag { 
+        background: #ebf8ff; 
+        padding: 4px 10px; 
+        border-radius: 20px; 
+        font-size: 11px; 
+        font-weight: 700;
+        color: #2b6cb0; 
+        text-transform: uppercase;
+        border: 1px solid #bee3f8;
+    }
+
+    @media (max-width: 900px) {
+      .filter-card { flex-direction: column; align-items: stretch; }
+      .search-input-wrapper { width: 100%; }
+      .button-group { width: 100%; justify-content: space-between; }
+      .btn-action { flex: 1; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand"><i class="fas fa-shield-halved"></i> ADMIN PORTAL</div>
+    <div class="nav-links">
+      <a href="attendance.html" class="nav-item active">ATTENDANCE</a>
+      <a href="employees.html" class="nav-item">EMPLOYEES</a>
+      <a href="projectsites.html" class="nav-item">PROJECT SITES</a>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <div class="page-header">
+      <h1 class="page-title">Attendance Logs</h1>
+    </div>
+
+    <div class="filter-card">
+      <div class="search-input-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search name, ID, or site..." onkeyup="filterTable()">
+      </div>
+
+      <div class="filter-group">
+        <label>From</label>
+        <input type="date" id="dateFrom" onchange="fetchLogs()">
+      </div>
+      <div class="filter-group">
+        <label>To</label>
+        <input type="date" id="dateTo" onchange="fetchLogs()">
+      </div>
+      
+      <div class="button-group">
+        <button class="btn-action btn-reset" title="Reset All" onclick="resetFilters()">
+            <i class="fas fa-undo"></i>
+        </button>
+        <button class="btn-action btn-delete-filtered" title="Clear Date Range" onclick="deleteFilteredLogs()">
+            <i class="fas fa-trash-can"></i>
+        </button>
+        <button class="btn-action btn-download" onclick="downloadCSV()">
+            <i class="fas fa-file-csv"></i> Export
+        </button>
+      </div>
+    </div>
+
+    <div class="table-card">
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                  <tr>
+                    <th>Emp ID</th>
+                    <th>Full Name</th>
+                    <th>Date</th>
+                    <th>Login</th>
+                    <th>Logout</th>
+                    <th>Project Site</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-body"></tbody>
+            </table>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ugcumdfeioxrtijekvcl.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Z_sTQbKf7EeHB5YHGNH8Fg_y_AQmdti';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentData = []; 
+
+    async function fetchLogs() {
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo = document.getElementById('dateTo').value;
+      const logsBody = document.getElementById('logs-body');
+
+      logsBody.innerHTML = '<tr><td colspan="6" class="no-data"><i class="fas fa-spinner fa-spin"></i> Syncing...</td></tr>';
+
+      let query = supabase.from('attendance_logs').select('*');
+      if (dateFrom) query = query.gte('date', dateFrom);
+      if (dateTo) query = query.lte('date', dateTo);
+
+      const { data, error } = await query.order('date', { ascending: false }).order('login_time', { ascending: false });
+
+      if (error) {
+        logsBody.innerHTML = '<tr><td colspan="6" class="no-data" style="color:var(--danger);">Connection Error.</td></tr>';
+        return;
+      }
+
+      currentData = data || []; 
+      filterTable(); // Apply any existing search term to new data
+    }
+
+    function renderTable(dataToRender) {
+      const logsBody = document.getElementById('logs-body');
+      if (dataToRender.length === 0) {
+        logsBody.innerHTML = '<tr><td colspan="6" class="no-data">No records found.</td></tr>';
+        return;
+      }
+
+      logsBody.innerHTML = '';
+      dataToRender.forEach(log => {
+        logsBody.innerHTML += `
+          <tr>
+            <td><span style="font-weight:700; color:#64748b;">${log.employee_id}</span></td>
+            <td style="font-weight:500;">${log.full_name}</td>
+            <td>${new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+            <td class="status-login"><i class="far fa-circle-check"></i> ${log.login_time || '--:--'}</td>
+            <td class="status-logout"><i class="far fa-circle-left"></i> ${log.logout_time || '--:--'}</td>
+            <td><span class="site-tag">${log.project_site || 'Unassigned'}</span></td>
+          </tr>`;
+      });
+    }
+
+    function filterTable() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = currentData.filter(log => {
+        return (
+          log.full_name.toLowerCase().includes(searchTerm) ||
+          log.employee_id.toString().includes(searchTerm) ||
+          (log.project_site && log.project_site.toLowerCase().includes(searchTerm))
+        );
+      });
+      renderTable(filtered);
+    }
+
+    // SMART EXPORT: Only exports what is currently visible in the table
+    function downloadCSV() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const dataToExport = currentData.filter(log => {
+        return (
+          log.full_name.toLowerCase().includes(searchTerm) ||
+          log.employee_id.toString().includes(searchTerm) ||
+          (log.project_site && log.project_site.toLowerCase().includes(searchTerm))
+        );
+      });
+
+      if (dataToExport.length === 0) return alert("Nothing to export.");
+
+      let csvContent = "data:text/csv;charset=utf-8,ID,Full Name,Date,Login,Logout,Project Site\n";
+      dataToExport.forEach(log => {
+        csvContent += `${log.employee_id},"${log.full_name}",${log.date},${log.login_time || ''},${log.logout_time || ''},"${log.project_site || ''}"\n`;
+      });
+
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", `Attendance_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function deleteFilteredLogs() {
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo = document.getElementById('dateTo').value;
+      if (!dateFrom && !dateTo) return alert("Select a date range first.");
+
+      if (confirm(`Delete logs from ${dateFrom || 'start'} to ${dateTo || 'today'}?`)) {
+        let query = supabase.from('attendance_logs').delete();
+        if (dateFrom) query = query.gte('date', dateFrom);
+        if (dateTo) query = query.lte('date', dateTo);
+        const { error } = await query;
+        if (error) alert("Error deleting"); else fetchLogs();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('dateFrom').value = '';
+      document.getElementById('dateTo').value = '';
+      document.getElementById('searchInput').value = '';
+      fetchLogs();
+    }
+
+    fetchLogs();
+  </script>
+</body>
+</html>
