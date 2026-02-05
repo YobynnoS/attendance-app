@@ -20,7 +20,6 @@
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: var(--text); overflow-x: hidden; }
     
-    /* Responsive Navbar */
     .navbar {
       background: var(--secondary);
       min-height: var(--nav-height);
@@ -49,12 +48,24 @@
     }
     .nav-item.active { color: var(--white); background: rgba(255,255,255,0.1); border-bottom: 2px solid var(--primary); }
 
-    /* Main Container */
     .main-container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
-    .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; }
+    .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; }
     .page-title { margin: 0; font-size: 20px; color: var(--secondary); }
 
-    /* Buttons */
+    /* Search Bar Styling */
+    .search-container { margin-bottom: 20px; position: relative; }
+    .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #a0aec0; }
+    .search-bar { 
+      width: 100%; 
+      padding: 12px 15px 12px 40px; 
+      border-radius: 10px; 
+      border: 1px solid #e2e8f0; 
+      outline: none; 
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+
     .btn-register { 
       background: var(--success); 
       padding: 10px 16px; 
@@ -67,7 +78,6 @@
       display: flex; 
       align-items: center; 
       gap: 8px;
-      white-space: nowrap;
     }
 
     .btn-edit, .btn-delete { 
@@ -80,7 +90,6 @@
     .btn-edit:hover { background: #03a9f4; color: white; }
     .btn-delete:hover { background: #f44336; color: white; }
 
-    /* Table Responsiveness */
     .table-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; min-width: 400px; }
@@ -89,20 +98,17 @@
 
     .action-group { display: flex; justify-content: center; gap: 8px; }
 
-    /* Modal Styling */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); padding: 20px; }
-    .modal-content { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .modal-content { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 350px; }
     .modal-content h3 { margin-top: 0; font-size: 18px; color: var(--secondary); }
     .modal-content input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
-    /* Mobile specific adjustments */
     @media (max-width: 600px) {
       .navbar { justify-content: center; }
       .nav-brand { width: 100%; text-align: center; margin-bottom: 8px; }
       .header-flex { flex-direction: column; align-items: stretch; text-align: center; }
       .btn-register { justify-content: center; }
-      td, th { padding: 10px; }
     }
   </style>
 </head>
@@ -123,6 +129,11 @@
       <button class="btn-register" onclick="openModal()">
         <i class="fas fa-plus"></i> Register New
       </button>
+    </div>
+
+    <div class="search-container">
+      <i class="fas fa-search"></i>
+      <input type="text" id="employeeSearch" class="search-bar" placeholder="Search by name or ID..." onkeyup="filterEmployees()">
     </div>
 
     <div class="table-card">
@@ -161,6 +172,9 @@
 
     const employeeBody = document.getElementById('employee-body');
     const modalOverlay = document.getElementById('modalOverlay');
+    
+    // MASTER LIST: Holds all data from database
+    let allEmployees = [];
 
     function openModal(id = null, name = '') {
       document.getElementById('editId').value = id;
@@ -174,8 +188,20 @@
     async function fetchEmployees() {
       const { data, error } = await supabase.from('employees').select('id, full_name').order('id', { ascending: true });
       if (error) return;
+      
+      allEmployees = data; // Store in our master list
+      renderTable(allEmployees); // Show them
+    }
+
+    // FUNCTION TO SHOW DATA IN TABLE
+    function renderTable(list) {
       employeeBody.innerHTML = '';
-      data.forEach(emp => {
+      if (list.length === 0) {
+        employeeBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#94a3b8;">No employees found.</td></tr>';
+        return;
+      }
+      
+      list.forEach(emp => {
         employeeBody.innerHTML += `
           <tr>
             <td><span style="color:#94a3b8; font-weight:bold;">#${emp.id}</span></td>
@@ -188,6 +214,18 @@
             </td>
           </tr>`;
       });
+    }
+
+    // SEARCH LOGIC
+    function filterEmployees() {
+      const searchTerm = document.getElementById('employeeSearch').value.toLowerCase();
+      
+      const filtered = allEmployees.filter(emp => {
+        return emp.full_name.toLowerCase().includes(searchTerm) || 
+               emp.id.toString().includes(searchTerm);
+      });
+      
+      renderTable(filtered);
     }
 
     async function saveEmployee() {
